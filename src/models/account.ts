@@ -3,8 +3,13 @@ import Joi from "joi";
 import { InvalidDataError } from "../utils/errors";
 import {hash, compare} from "bcrypt"
 import DB from "../utils/db";
+import {sign, verify} from "jsonwebtoken"
 
 export const collectionName = 'accounts';
+
+export interface TokenPayload {
+  _id: string
+}
 
 export default class Account {
   _id?: ObjectId
@@ -82,5 +87,17 @@ export default class Account {
       ));
     }
     return accounts;
+  }
+
+  async generateToken() : Promise<string> {
+    return await sign({
+      _id: this._id?.toHexString()
+    }, process.env.JWT_SECRET!, {
+      expiresIn: "30d"
+    });
+  }
+
+  static async validateToken(token: string) : Promise<TokenPayload> {
+    return await verify(token, process.env.JWT_SECRET!) as TokenPayload;
   }
 }
