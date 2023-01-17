@@ -1,7 +1,9 @@
 import {Response, NextFunction} from "express"
 import { ObjectId } from "mongodb";
 import { AuthenticatedRequest } from "../middlewares/auth";
-import Chatroom from "../models/chatroom";
+import Chatroom, {collectionName as chatroomCollection} from "../models/chatroom";
+import {collectionName as accountCollection} from "../models/account"
+import DB from "../utils/db";
 
 export async function createChatroomHandler(
   req: AuthenticatedRequest, res: Response, next: NextFunction
@@ -30,19 +32,43 @@ export async function fetchChatroomHandler(
   next: NextFunction
 ) {
   try {
-    const chatrooms = await Chatroom.fetch(
+    // const chatrooms = await Chatroom.fetch(
+    //   {
+    //     participants: {
+    //       $in: [new ObjectId(req.userId)],
+    //     },
+    //   },
+    //   {
+    //     sort: {
+    //       updatedAt: -1,
+    //     },
+    //   }
+    // );
+    const result = await DB.instance().collection(chatroomCollection).aggregate([
       {
-        participants: {
-          $in: [new ObjectId(req.userId)],
-        },
+        $match: {
+          participants: {
+            $in: [new ObjectId(req.userId)],
+          },
+        }
       },
       {
-        sort: {
-          updatedAt: -1,
-        },
+        $lookup: {
+          from: accountCollection,
+          localField: "participants",
+          foreignField: "_id",
+          as: "participants"
+        }
+      },
+      {
+        $project: {
+          participants: {
+            password: 0,
+          }
+        }
       }
-    );
-    res.status(200).json(chatrooms);
+    ]).toArray()
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
