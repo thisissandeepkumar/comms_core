@@ -1,6 +1,8 @@
 import {
   Request, Response, NextFunction
 } from 'express';
+import { ObjectId } from 'mongodb';
+import { AuthenticatedRequest } from '../middlewares/auth';
 import Account from '../models/account';
 import { InvalidDataError, NotFoundError } from '../utils/errors';
 
@@ -42,6 +44,22 @@ export async function loginAccountHandler(
       token: token,
       user: account
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function persistedUserDetailsHandlers(
+  req: AuthenticatedRequest, res: Response, next: NextFunction
+) {
+  try {
+    const accounts = await Account.fetch({
+      _id: new ObjectId(req.userId!)
+    })
+    if(accounts.length === 0) {
+      throw new NotFoundError("Account not found");
+    }
+    res.status(200).json(accounts[0]);
   } catch (error) {
     next(error);
   }
