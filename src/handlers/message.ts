@@ -1,4 +1,5 @@
 import {Response, NextFunction} from "express"
+import { ObjectId } from "mongodb";
 import { AuthenticatedRequest } from "../middlewares/auth";
 import Message from "../models/message";
 
@@ -22,11 +23,14 @@ export async function fetchMessagesHandler(
   req: AuthenticatedRequest, res: Response, next: NextFunction
 ) {
   try {
-    let messages = await Message.fetch({
-      chatroomId: req.query.chatroomId
-    }, {
-      sort: { createdAt: 1 },
-    })
+    let messages = await Message.fetch(
+      {
+        chatroomId: new ObjectId(req.query.chatroomId as string),
+      },
+      {
+        sort: { createdAt: 1 },
+      }
+    );
     res.status(200).json(messages);
   } catch (error) {
     next(error);
