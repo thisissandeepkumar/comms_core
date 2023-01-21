@@ -49,4 +49,19 @@ export default class Chatroom {
     });
   }
 
+  async checkExistance() : Promise<boolean> {
+    let result = await DB.instance().collection(collectionName).findOne({
+      $and: [
+        {
+          participants: {
+            $all: this.participants
+          }
+        },
+        {
+          isGroup: false
+        }
+      ]
+    });
+    return !!result;
+  }
 }
