@@ -27,7 +27,7 @@ export async function loginAccountHandler(
   next: NextFunction
 ) {
   try {
-    const {email, password} = req.body;
+    const {email, password, fcmToken} = req.body;
     const accounts = await Account.fetch({
       email: email
     })
@@ -39,7 +39,7 @@ export async function loginAccountHandler(
     if(!passwordMatch) {
       throw new InvalidDataError("Invalid password");
     }
-    const token = await account.generateToken();
+    const token = await account.generateToken(fcmToken as string);
     res.status(200).json({
       token: token,
       user: account
@@ -60,6 +60,27 @@ export async function persistedUserDetailsHandlers(
       throw new NotFoundError("Account not found");
     }
     res.status(200).json(accounts[0]);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function logoutHandler(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const account = await Account.fetch({
+      _id: new ObjectId(req.userId!)
+    })
+    if(!account) {
+      throw new NotFoundError("Account not found");
+    }
+    await account[0].removeToken(req.body.token);
+    res.status(200).json({
+      message: "Logged out"
+    });
   } catch (error) {
     next(error);
   }

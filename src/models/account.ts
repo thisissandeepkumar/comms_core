@@ -11,6 +11,12 @@ export interface TokenPayload {
   _id: string
 }
 
+export interface FCMToken {
+  token: string,
+  createdAt: Date,
+  validTill: Date
+}
+
 export default class Account {
   _id?: ObjectId
   firstName: string
@@ -18,12 +24,14 @@ export default class Account {
   email: string
   #password?: string
   createdAt?: Date
+  fcmTokens: Array<FCMToken>
 
   constructor(firstName: string, lastName: string, email: string, createdAt: Date, _id?: ObjectId, password?: string) {
     this.firstName = firstName;
     this.lastName = lastName;
     this.email = email;
     this.createdAt = createdAt;
+    this.fcmTokens = [];
     if(_id) this._id = _id;
     if(password) this.#password = password;
   }
@@ -89,12 +97,35 @@ export default class Account {
     return accounts;
   }
 
-  async generateToken() : Promise<string> {
+  async generateToken(fcmToken: string) : Promise<string> {
+    await DB.instance().collection(collectionName).updateOne({
+      _id: this._id
+    }, {
+      $addToSet: {
+        fcmTokens: {
+          token: fcmToken,
+          createdAt: new Date(),
+          validTill: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000)
+        }
+      }
+    })
     return await sign({
       _id: this._id?.toHexString()
     }, process.env.JWT_SECRET!, {
       expiresIn: "30d"
     });
+  }
+
+  async removeToken(fcmToken: string) : Promise<void> {
+    await DB.instance().collection(collectionName).updateOne({
+      _id: this._id
+    }, {
+      $pull: {
+        fcmTokens: {
+          token: fcmToken
+        }
+      }
+    })
   }
 
   static async validateToken(token: string) : Promise<TokenPayload> {

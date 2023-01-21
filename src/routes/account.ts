@@ -11,3 +11,8 @@ v1AccountRouter.get(
   auth,
   accountHandlers.persistedUserDetailsHandlers
 );
+v1AccountRouter.post(
+  "/logout",
+  auth,
+  accountHandlers.logoutHandler
+)
