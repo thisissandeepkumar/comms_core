@@ -9,6 +9,7 @@ import { v1ChatroomRouter } from "./routes/chatroom"
 import { v1messageRouter } from "./routes/message"
 import DB from "./utils/db"
 import { AccountDisabledError, DuplicateEntryError, InvalidDataError, NotFoundError, UnauthorizedError } from "./utils/errors"
+import { initializeFirebase } from "./utils/firebase"
 import logger from "./utils/logger"
 import { initializeSocketServer } from "./utils/socket"
 
@@ -21,6 +22,8 @@ async function main() {
 
     const httpServer = createServer(app);
     await initializeSocketServer(httpServer)
+
+    initializeFirebase()
 
     app.use(Express.json())
 
