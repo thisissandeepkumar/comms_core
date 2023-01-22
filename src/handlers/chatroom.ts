@@ -20,7 +20,7 @@ export async function createChatroomHandler(
       isGroup: req.body.participants.length > 1
     })
     const doesExist = await chatroom.checkExistance()
-    if(doesExist) {
+    if(doesExist != null) {
       res.status(409).json({
         message: "Chatroom already exists",
         chatroom: doesExist

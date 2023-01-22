@@ -62,13 +62,13 @@ export default class Chatroom {
         }
       ]
     });
-    return result? null : new Chatroom(
+    return result != null? new Chatroom(
       result!.participants,
       result!.createdAt,
       result!.updatedAt,
       result!.title,
       result!.isGroup,
       result!._id
-    );
+    ) : null;
   }
 }
