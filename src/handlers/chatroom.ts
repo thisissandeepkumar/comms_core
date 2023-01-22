@@ -2,32 +2,39 @@ import {Response, NextFunction} from "express"
 import { ObjectId } from "mongodb";
 import { AuthenticatedRequest } from "../middlewares/auth";
 import Chatroom, {collectionName as chatroomCollection} from "../models/chatroom";
-import {collectionName as accountCollection} from "../models/account"
+import Account, {collectionName as accountCollection} from "../models/account"
 import DB from "../utils/db";
 
 export async function createChatroomHandler(
   req: AuthenticatedRequest, res: Response, next: NextFunction
 ) {
   try {
-    const chatroom = await Chatroom.parse({
-      ...req.body,
-      participants: [
-        ...req.body.participants,
-        req.userId
-      ],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isGroup: req.body.participants.length > 1
+    const account = await Account.fetch({
+      email: req.body.email as string
     })
-    const doesExist = await chatroom.checkExistance()
-    if(doesExist != null) {
-      res.status(409).json({
-        message: "Chatroom already exists",
-        chatroom: doesExist
+    if(account.length === 0) {
+      res.status(404).json({
+        message: "Account not found"
       })
     } else {
-      await chatroom.save();
-      res.status(201).json(chatroom);
+      const chatroom = await Chatroom.parse({
+        title: null,
+        participants: [account[0]._id, req.userId],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isGroup: false
+        // isGroup: req.body.participants.length > 1,
+      });
+      const doesExist = await chatroom.checkExistance();
+      if (doesExist != null) {
+        res.status(409).json({
+          message: "Chatroom already exists",
+          chatroom: doesExist,
+        });
+      } else {
+        await chatroom.save();
+        res.status(201).json(chatroom);
+      }
     }
   } catch (error) {
     next(error);

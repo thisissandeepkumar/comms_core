@@ -29,7 +29,7 @@ export default class Chatroom {
       })).required(),
       createdAt: Joi.date().required(),
       updatedAt: Joi.date().required(),
-      title: Joi.string().default(null),
+      title: Joi.string().allow(null).default(null),
       isGroup: Joi.boolean().default(false),
     })
     let validatedData = await schema.validateAsync(data);
