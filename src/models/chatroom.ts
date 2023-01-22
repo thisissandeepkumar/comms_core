@@ -49,6 +49,32 @@ export default class Chatroom {
     });
   }
 
+  async aggregatedFetch() : Promise<Chatroom> {
+    let result = await DB.instance().collection(collectionName).aggregate([
+      {
+        $match: {
+          _id: this._id
+        }
+      },
+      {
+        $lookup: {
+          from: "accounts",
+          localField: "participants",
+          foreignField: "_id",
+          as: "participants"
+        }
+      }
+    ]).toArray();
+    return new Chatroom(
+      result[0].participants,
+      result[0].createdAt,
+      result[0].updatedAt,
+      result[0].title,
+      result[0].isGroup,
+      result[0]._id
+    )
+  }
+
   async checkExistance() : Promise<Chatroom | null> {
     let result = await DB.instance().collection(collectionName).findOne({
       $and: [

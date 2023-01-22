@@ -29,11 +29,11 @@ export async function createChatroomHandler(
       if (doesExist != null) {
         res.status(409).json({
           message: "Chatroom already exists",
-          chatroom: doesExist,
+          chatroom: await doesExist.aggregatedFetch(),
         });
       } else {
         await chatroom.save();
-        res.status(201).json(chatroom);
+        res.status(201).json(await chatroom.aggregatedFetch());
       }
     }
   } catch (error) {
