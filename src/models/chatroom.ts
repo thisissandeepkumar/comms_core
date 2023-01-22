@@ -49,7 +49,7 @@ export default class Chatroom {
     });
   }
 
-  async checkExistance() : Promise<boolean> {
+  async checkExistance() : Promise<Chatroom | null> {
     let result = await DB.instance().collection(collectionName).findOne({
       $and: [
         {
@@ -62,6 +62,13 @@ export default class Chatroom {
         }
       ]
     });
-    return !!result;
+    return result? null : new Chatroom(
+      result!.participants,
+      result!.createdAt,
+      result!.updatedAt,
+      result!.title,
+      result!.isGroup,
+      result!._id
+    );
   }
 }

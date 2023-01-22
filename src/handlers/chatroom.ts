@@ -22,7 +22,8 @@ export async function createChatroomHandler(
     const doesExist = await chatroom.checkExistance()
     if(doesExist) {
       res.status(409).json({
-        message: "Chatroom already exists"
+        message: "Chatroom already exists",
+        chatroom: doesExist
       })
     } else {
       await chatroom.save();
