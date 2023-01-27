@@ -93,6 +93,7 @@ export async function sendNotification(message: Message) {
       })
       console.log(sender)
       let senderName = `${sender!.firstName} ${sender!.lastName}`
+      console.log(fcmTokens)
       publishNotificationsBulk(fcmTokens, senderName, message.textContent!);
     }
   } catch (error) {
