@@ -32,3 +32,21 @@ export async function publishNotification(fcmToken: string, title : string, body
     logger.error(error)
   }
 }
+
+export async function publishNotificationsBulk(fcmTokens: Array<string>, title: string, body: string) {
+  try {
+    if(!firebaseApp) {
+      initializeFirebase()
+    }
+    let message = {
+      notification: {
+        title,
+        body
+      },
+      tokens: fcmTokens
+    }
+    return await getMessaging().sendMulticast(message)
+  } catch (error) {
+    logger.error(error)
+  }
+}

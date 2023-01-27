@@ -7,6 +7,10 @@ import { Server as httpServer } from "http";
 import Message from "../models/message";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import { socketAuth } from "../middlewares/auth";
+import { publishNotification, publishNotificationsBulk } from "./firebase";
+import DB from "./db"
+import Chatroom, { collectionName as chatroomCollection } from "../models/chatroom";
+import Account from "../models/account";
 
 let io: Server | null = null;
 let mongoCollection: Collection<Document> | null = null;
@@ -48,11 +52,47 @@ export async function initializeSocketServer(app: httpServer): Promise<void> {
             createdAt: new Date(),
           });
           await messageObject.save();
+          sendNotification(messageObject);
           socket.to(roomId).emit("message", messageObject);
         });
       }
     });
   } catch (error) {
     throw error;
+  }
+}
+
+export async function sendNotification(message: Message) {
+  try {
+    let chatroomId = message.chatroomId;
+    let chatroom = await Chatroom.fetch({
+      _id: chatroomId,
+    })
+    if (chatroom) {
+      let participants = chatroom[0].participants
+      let deliveryUsers = participants.filter((participant) => {
+        return participant != message.senderId
+      })
+      let deliveryFcmUserObjects = await Account.fetch({
+        _id: {
+          $in: [...deliveryUsers, message.senderId],
+        },
+      });
+      let fcmTokens: Array<string> = []
+      deliveryFcmUserObjects.map((user) => {
+        if(user.fcmTokens.length !== 0 && user._id != message.senderId) {
+          user.fcmTokens.map((token) => {
+            fcmTokens.push(token.token)
+          })
+        } 
+      });
+      let sender = deliveryFcmUserObjects.find((user) => {
+        return user._id == message.senderId
+      })
+      let senderName = `${sender!.firstName} ${sender!.lastName}`
+      publishNotificationsBulk(fcmTokens, senderName, message.textContent!);
+    }
+  } catch (error) {
+    logger.error(error);
   }
 }
