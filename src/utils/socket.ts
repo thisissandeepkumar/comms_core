@@ -79,6 +79,7 @@ export async function sendNotification(message: Message) {
         },
       });
       let fcmTokens: Array<string> = []
+      console.log(deliveryFcmUserObjects)
       deliveryFcmUserObjects.map((user) => {
         if(user.fcmTokens.length !== 0 && user._id != message.senderId) {
           user.fcmTokens.map((token) => {
@@ -86,9 +87,11 @@ export async function sendNotification(message: Message) {
           })
         } 
       });
+      console.log(fcmTokens)
       let sender = deliveryFcmUserObjects.find((user) => {
         return user._id == message.senderId
       })
+      console.log(sender)
       let senderName = `${sender!.firstName} ${sender!.lastName}`
       publishNotificationsBulk(fcmTokens, senderName, message.textContent!);
     }
