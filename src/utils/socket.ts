@@ -94,7 +94,10 @@ export async function sendNotification(message: Message) {
       console.log(sender)
       let senderName = `${sender!.firstName} ${sender!.lastName}`
       console.log(fcmTokens)
-      publishNotificationsBulk(fcmTokens, senderName, message.textContent!);
+      publishNotificationsBulk(fcmTokens, senderName, message.textContent!, {
+        route: "/chatroom",
+        chatroomId: chatroomId.toHexString(),
+      });
     }
   } catch (error) {
     logger.error(error);

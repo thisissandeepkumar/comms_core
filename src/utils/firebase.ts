@@ -5,6 +5,11 @@ const serviceAccount = require("../../firebase.json")
 
 let firebaseApp : App | null = null
 
+interface NotificationData {
+  route: string
+  chatroomId?: string | null
+}
+
 export function initializeFirebase() {
   try {
     firebaseApp = initializeApp({
@@ -33,20 +38,31 @@ export async function publishNotification(fcmToken: string, title : string, body
   }
 }
 
-export async function publishNotificationsBulk(fcmTokens: Array<string>, title: string, body: string) {
+export async function publishNotificationsBulk(
+  fcmTokens: Array<string>,
+  title: string,
+  body: string,
+  data: NotificationData | null = null
+) {
   try {
-    if(!firebaseApp) {
-      initializeFirebase()
+    if (!firebaseApp) {
+      initializeFirebase();
     }
-    let message = {
+    let message: any = {
       notification: {
         title,
-        body
+        body,
       },
-      tokens: fcmTokens
+      tokens: fcmTokens,
+    };
+    if (data) {
+      message = {
+        ...message,
+        data,
+      };
     }
-    return await getMessaging().sendMulticast(message)
+    return await getMessaging().sendMulticast(message);
   } catch (error) {
-    logger.error(error)
+    logger.error(error);
   }
 }
