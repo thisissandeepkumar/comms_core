@@ -89,7 +89,7 @@ export async function sendNotification(message: Message) {
       });
       console.log(fcmTokens)
       let sender = deliveryFcmUserObjects.find((user) => {
-        return user._id == message.senderId
+        return user._id?.toHexString() == message.senderId.toHexString()
       })
       console.log(sender)
       let senderName = `${sender!.firstName} ${sender!.lastName}`
