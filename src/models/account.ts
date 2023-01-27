@@ -26,7 +26,7 @@ export default class Account {
   createdAt?: Date
   fcmTokens: Array<FCMToken>
 
-  constructor(firstName: string, lastName: string, email: string, createdAt: Date, _id?: ObjectId, password?: string) {
+  constructor(firstName: string, lastName: string, email: string, createdAt: Date, _id?: ObjectId, password?: string, fcmTokens?: Array<FCMToken> | null) {
     this.firstName = firstName;
     this.lastName = lastName;
     this.email = email;
@@ -34,6 +34,7 @@ export default class Account {
     this.fcmTokens = [];
     if(_id) this._id = _id;
     if(password) this.#password = password;
+    if(fcmTokens) this.fcmTokens = fcmTokens;
   }
 
   static async parse(data: any) : Promise<Account> {
@@ -91,7 +92,8 @@ export default class Account {
         result[i].email,
         result[i].createdAt,
         result[i]._id,
-        result[i].password
+        result[i].password,
+        result[i].fcmTokens
       ));
     }
     return accounts;
