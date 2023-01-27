@@ -20,3 +20,7 @@ services:
     volumes:
       - ./data/redis:/data
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
