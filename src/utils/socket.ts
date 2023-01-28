@@ -7,8 +7,7 @@ import { Server as httpServer } from "http";
 import Message from "../models/message";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import { socketAuth } from "../middlewares/auth";
-import { publishNotification, publishNotificationsBulk } from "./firebase";
-import DB from "./db"
+import { publishNotificationsBulk } from "./firebase";
 import Chatroom, { collectionName as chatroomCollection } from "../models/chatroom";
 import Account from "../models/account";
 
@@ -55,6 +54,12 @@ export async function initializeSocketServer(app: httpServer): Promise<void> {
           sendNotification(messageObject);
           socket.to(roomId).emit("message", messageObject);
         });
+        socket.on("p2p", async (message) => {
+          socket.to(roomId).emit("p2p", {
+            ...message,
+            senderId: socket.metaData!.userId,
+          });
+        })
       }
     });
   } catch (error) {
@@ -79,7 +84,6 @@ export async function sendNotification(message: Message) {
         },
       });
       let fcmTokens: Array<string> = []
-      console.log(deliveryFcmUserObjects)
       deliveryFcmUserObjects.map((user) => {
         if(user.fcmTokens.length !== 0 && user._id != message.senderId) {
           user.fcmTokens.map((token) => {
@@ -87,13 +91,10 @@ export async function sendNotification(message: Message) {
           })
         } 
       });
-      console.log(fcmTokens)
       let sender = deliveryFcmUserObjects.find((user) => {
         return user._id?.toHexString() == message.senderId.toHexString()
       })
-      console.log(sender)
       let senderName = `${sender!.firstName} ${sender!.lastName}`
-      console.log(fcmTokens)
       publishNotificationsBulk(fcmTokens, senderName, message.textContent!, {
         route: "/chatroom",
         chatroomId: chatroomId.toHexString(),
