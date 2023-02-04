@@ -23,12 +23,21 @@ export async function fetchMessagesHandler(
   req: AuthenticatedRequest, res: Response, next: NextFunction
 ) {
   try {
+    const { page, size } = req.query;
+    let options = {}
+    if(page && size) {
+      options = {
+        limit: parseInt(size as string),
+        skip: (parseInt(page as string) - 1) * parseInt(size as string),
+      }
+    }
     let messages = await Message.fetch(
       {
         chatroomId: new ObjectId(req.query.chatroomId as string),
       },
       {
         sort: { createdAt: 1 },
+        ...options,
       }
     );
     res.status(200).json(messages);
