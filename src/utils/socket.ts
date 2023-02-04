@@ -38,32 +38,32 @@ export async function initializeSocketServer(app: httpServer): Promise<void> {
     io.use(socketAuth);
     logger.info("Socket server attached!");
     io.on("connection", (socket: SocketInstance) => {
-      const roomId = socket.handshake.headers["roomid"];
-      if (!roomId) {
-        socket.disconnect();
-      } else {
-        socket.join(roomId);
-        socket.on("disconnect", () => {
-          logger.info(`User ${socket.metaData!.userId} disconnected from room ${roomId}`)
+
+      socket.on("join", async (data) => {
+        let chatroomId = data.chatroomId
+        socket.rooms.forEach((room) => {
+          socket.leave(room)
         })
-        socket.on("message", async (message) => {
-          let messageObject = await Message.parse({
-            ...message,
-            chatroomId: new ObjectId(roomId as string),
-            senderId: new ObjectId(socket.metaData!.userId!),
-            createdAt: new Date(),
-          });
-          await messageObject.save();
-          sendNotification(messageObject);
-          socket.to(roomId).emit("message", messageObject);
+        socket.join(chatroomId)
+      })
+
+      socket.on("leave", async (data) => {
+        socket.rooms.forEach((room) => {
+          socket.leave(room)
+        })
+      })
+
+      socket.on("message", async (message) => {
+        let messageObject = await Message.parse({
+          ...message,
+          senderId: new ObjectId(socket.metaData!.userId!),
+          createdAt: new Date(),
         });
-        socket.on("p2p", async (message) => {
-          socket.to(roomId).emit("p2p", {
-            ...message,
-            senderId: socket.metaData!.userId,
-          });
-        })
-      }
+        await messageObject.save();
+        sendNotification(messageObject);
+        socket.to(messageObject.chatroomId.toHexString()).emit("message", messageObject);
+      });
+
     });
   } catch (error) {
     throw error;
