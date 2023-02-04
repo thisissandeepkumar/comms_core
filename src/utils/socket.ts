@@ -9,7 +9,8 @@ import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import { socketAuth } from "../middlewares/auth";
 import { publishNotificationsBulk } from "./firebase";
 import Chatroom, { collectionName as chatroomCollection } from "../models/chatroom";
-import Account from "../models/account";
+import Account, {collectionName as accountCollection} from "../models/account";
+import DB from "./db";
 
 let io: Server | null = null;
 let mongoCollection: Collection<Document> | null = null;
@@ -76,33 +77,40 @@ export async function sendNotification(message: Message) {
     let chatroom = await Chatroom.fetch({
       _id: chatroomId,
     })
-    if (chatroom) {
-      let participants = chatroom[0].participants
-      let deliveryUsers = participants.filter((participant) => {
-        return participant != message.senderId
-      })
-      let deliveryFcmUserObjects = await Account.fetch({
-        _id: {
-          $in: [...deliveryUsers],
+    let fcmTokensData = await DB.instance()
+      .collection(accountCollection)
+      .aggregate([
+        {
+          $match: {
+            _id: {
+              $in: [chatroom[0].participants],
+            },
+          },
         },
-      });
-      let fcmTokens: Array<string> = []
-      deliveryFcmUserObjects.map((user) => {
-        if(user.fcmTokens.length !== 0 && user._id != message.senderId) {
-          user.fcmTokens.map((token) => {
-            fcmTokens.push(token.token)
-          })
-        } 
-      });
-      let sender = deliveryFcmUserObjects.find((user) => {
-        return user._id?.toHexString() == message.senderId.toHexString()
-      })
-      let senderName = `${sender!.firstName} ${sender!.lastName}`
-      publishNotificationsBulk(fcmTokens, senderName, message.textContent!, {
-        route: "/chatroom",
-        chatroomId: chatroomId.toHexString(),
-      });
-    }
+        {
+          $project: {
+            _id: 1,
+            firstName: 1,
+            lastName: 1,
+            fcmTokens: 1,
+          },
+        },
+      ]).toArray();
+    let deliveryTokens : string[] = [];
+    let title : string = "";
+    fcmTokensData.forEach((data) => {
+      if(data._id.toHexString() != message.senderId.toHexString()) {
+        data.fcmTokens.forEach((token: any) => {
+          deliveryTokens.push(token.token);
+        })
+      } else {
+        title = `${data.firstName} ${data.lastName}`
+      }
+    })
+    publishNotificationsBulk(deliveryTokens, title, message.textContent!, {
+      chatroomId: chatroomId.toHexString(),
+      route: "/chatroom"
+    })
   } catch (error) {
     logger.error(error);
   }
