@@ -83,7 +83,7 @@ export async function sendNotification(message: Message) {
       })
       let deliveryFcmUserObjects = await Account.fetch({
         _id: {
-          $in: [...deliveryUsers, message.senderId],
+          $in: [...deliveryUsers],
         },
       });
       let fcmTokens: Array<string> = []
