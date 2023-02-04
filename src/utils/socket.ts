@@ -38,7 +38,7 @@ export async function initializeSocketServer(app: httpServer): Promise<void> {
     io.use(socketAuth);
     logger.info("Socket server attached!");
     io.on("connection", (socket: SocketInstance) => {
-      const roomId = socket.handshake.query.room;
+      const roomId = socket.handshake.headers["roomId"];
       if (!roomId) {
         socket.disconnect();
       } else {
