@@ -83,7 +83,7 @@ export async function sendNotification(message: Message) {
         {
           $match: {
             _id: {
-              $in: [chatroom[0].participants],
+              $in: [...chatroom[0].participants],
             },
           },
         },
