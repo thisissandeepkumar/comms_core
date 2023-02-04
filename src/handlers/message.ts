@@ -36,7 +36,7 @@ export async function fetchMessagesHandler(
         chatroomId: new ObjectId(req.query.chatroomId as string),
       },
       {
-        sort: { createdAt: 1 },
+        sort: { createdAt: -1 },
         ...options,
       }
     );
