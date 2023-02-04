@@ -43,6 +43,9 @@ export async function initializeSocketServer(app: httpServer): Promise<void> {
         socket.disconnect();
       } else {
         socket.join(roomId);
+        socket.on("disconnect", () => {
+          logger.info(`User ${socket.metaData!.userId} disconnected from room ${roomId}`)
+        })
         socket.on("message", async (message) => {
           let messageObject = await Message.parse({
             ...message,
